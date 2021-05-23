@@ -47,26 +47,25 @@ foreach (kind 32 64 128)
   
     set(CMAKE_REQUIRED_FLAGS = -fpp)
     set(CMAKE_REQUIRED_DEFINITIONS -D_KIND=REAL${kind})
+    if ( NOT ("${CMAKE_REQUIRED_FLAGS}" STREQUAL ""))
+      string(REPLACE "=" "" compile_flags ${CMAKE_REQUIRED_FLAGS})
+    endif ()
+    execute_process(
+      COMMAND ${CMAKE_Fortran_COMPILER} ${CMAKE_REQUIRED_DEFINITIONS} ${compile_flags} ${CMAKE_CURRENT_LIST_DIR}/trial_sources/REAL_KIND.F90 "-o" "REAL_KIND_${kind}.exe"
+      RESULT_VARIABLE error
+      WORKING_DIRECTORY ${GFTL_SHARED_BINARY_DIR}
+      OUTPUT_QUIET
+      ERROR_QUIET
+      )
 
-    try_compile (
-      code_compiles
-      ${GFTL_SHARED_BINARY_DIR}
-      ${CMAKE_CURRENT_LIST_DIR}/trial_sources/REAL_KIND.F90
-      CMAKE_FLAGS "-DCOMPILE_DEFINITIONS=${CMAKE_REQUIRED_DEFINITIONS}")
-    
-    if (code_compiles)
+    if ( NOT error)
       CHECK_Fortran_SOURCE_RUN (
         ${CMAKE_CURRENT_LIST_DIR}/trial_sources/REAL_KIND.F90
         _ISO_REAL${kind}
         "Real(${kind}) kind"
         )
+        
     endif ()
-    
-    try_compile (
-      code_compiles
-      ${GFTL_SHARED_BINARY_DIR}
-      ${CMAKE_CURRENT_LIST_DIR}/trial_sources/REAL_KIND.F90
-      CMAKE_FLAGS "-DCOMPILE_DEFINITIONS=${CMAKE_REQUIRED_DEFINITIONS}")
     
   endif ()
   

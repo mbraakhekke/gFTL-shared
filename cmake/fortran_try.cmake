@@ -6,27 +6,42 @@ macro (CHECK_FORTRAN_SOURCE_RUN file var docstr)
     
   else ()
   
-    try_run (
-      run compile
-      ${CMAKE_CURRENT_BINARY_DIR}
-      ${file}
-      CMAKE_FLAGS "-DCOMPILE_DEFINITIONS=${CMAKE_REQUIRED_DEFINITIONS}"
-      RUN_OUTPUT_VARIABLE ${var}
+    # prepare compile flags
+    if ( NOT ("${CMAKE_REQUIRED_FLAGS}" STREQUAL ""))
+        string(REPLACE "=" "" compile_flags ${CMAKE_REQUIRED_FLAGS})
+    endif ()
+  
+    get_filename_component(binname ${file} NAME_WLE)
+  
+    # try to compile the source
+    execute_process(
+      COMMAND ${CMAKE_Fortran_COMPILER} ${CMAKE_REQUIRED_DEFINITIONS} ${compile_flags} ${file} "-o" "${binname}.exe"
+      RESULT_VARIABLE error
+      WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+      OUTPUT_QUIET
+      ERROR_QUIET
       )
-
-    # Successful runs return "0", which is opposite of CMake sense of "if":
-    if (NOT run)
-      string(STRIP ${${var}} ${var})
+  
+    # try to run the binary
+    if ( NOT error)
+      execute_process(
+        COMMAND "${binname}.exe"
+        WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+        OUTPUT_VARIABLE out
+        ERROR_QUIET
+        RESULT_VARIABLE error
+        )
+        
+    endif ()
+  
+    if (NOT error)
+    
+      string(STRIP ${out} ${var})
       if (NOT CMAKE_REQUIRED_QUIET)
         message(STATUS "Performing Test ${var}: SUCCESS (value=${${var}})")
       endif ()
       
-      set (GFTL_SHARED${var}
-        ${${var}}
-        CACHE
-        STRING
-        ${docstr}
-        )
+      set (GFTL_SHARED${var} ${${var}} CACHE STRING ${docstr} )
       
     else ()
       
